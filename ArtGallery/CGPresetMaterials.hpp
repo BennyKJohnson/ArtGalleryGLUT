@@ -125,7 +125,7 @@ public:
         material->locksAmbientWithDiffuse = false;
         
         CGColor ambient = CGColor(0.19125f, 0.0735f, 0.0225f, 1.0f);
-        CGColor diffuse = CGColor(0.19125f, 0.0735f, 0.0225f, 1.0f);
+        CGColor diffuse = CGColor(0.19125f, 0.0735f, 0.0225f, 0.5f);
         CGColor specular = CGColor(0.19125f, 0.0735f, 0.0225f, 1.0f);
         float shiness = 12.8;
         

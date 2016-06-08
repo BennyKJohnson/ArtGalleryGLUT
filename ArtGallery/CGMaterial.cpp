@@ -43,7 +43,6 @@ void CGMaterial::loadMaterialProperty(CGMaterialProperty *property, GLenum type)
         loadTexture(property->content);
         property->loadContent();
     } else {
-        glBindTexture(GL_TEXTURE_2D, 0);       // bind texture type to ID
     }
     
     if (!property->color.isEmpty()){
@@ -56,6 +55,8 @@ void CGMaterial::loadMaterialProperty(CGMaterialProperty *property, GLenum type)
 }
 
 void CGMaterial::loadMaterial() {
+    
+    glBindTexture(GL_TEXTURE_2D, 0);       // bind texture type to ID
     
     GLenum faceType = doubleSided ? GL_FRONT_AND_BACK : GL_FRONT;
 

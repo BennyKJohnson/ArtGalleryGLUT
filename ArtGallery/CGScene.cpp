@@ -61,7 +61,7 @@ void CGScene::renderNode(CGNode *node) {
         CGMaterial *material = node->geometry->firstMaterial();
         if (material != NULL) {
             
-          material->loadMaterial();
+         material->loadMaterial();
             
         }
         
@@ -98,6 +98,13 @@ void CGScene::renderNode(CGNode *node) {
             
             // Set Spot light related properties
             glLightf(lightID, GL_SPOT_CUTOFF, light->spotOuterAngle);
+            GLfloat directionValues[] = {node->rotation.x, node->rotation.y, node->rotation.y};
+            glLightfv(lightID, GL_SPOT_DIRECTION, directionValues);
+        } else {
+            // Set back to default
+            glLightf(lightID, GL_SPOT_CUTOFF, 180);
+            GLfloat directionValues[] = {0,0, -1};
+            glLightfv(lightID, GL_SPOT_DIRECTION, directionValues);
         }
         
         
@@ -129,6 +136,8 @@ CGScene::CGScene() {
     
     autoenablesDefaultLighting = false;
     
+    color = CGColorRed();
+    
 }
 
 void CGScene::render() {
@@ -140,6 +149,8 @@ void CGScene::render() {
     if (rootNode == NULL) {
         return;
     }
+    
+    setContextColor(color);
     
     // Render root node recursively render all child nodes
     renderNode(rootNode);

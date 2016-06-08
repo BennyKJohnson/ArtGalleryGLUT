@@ -24,18 +24,19 @@ class CGTexture {
 public:
     
     CGSize size;
+    
     unsigned char* pixelData;
     
-    
-    CGTexture(std::string *filename) {
+    void loadFile(const char  *filename) {
         
         int channels = 0;
         int width;
         int height;
         
+        /*
         unsigned char *data = SOIL_load_image
         (
-         filename->c_str(),
+         filename,
          &width, &height, &channels,
          SOIL_LOAD_AUTO
          );
@@ -44,6 +45,19 @@ public:
         
         size.width = (float)width;
         size.height = (float)height;
+        */
+        pixelData = loadBMPFile(filename);
+        
+    }
+    
+    CGTexture(const char  *filename) {
+        loadFile(filename);
+        
+    }
+    
+    CGTexture(std::string *filename) {
+        loadFile(filename->c_str());
+
         
         //loadBMPFile(filename->c_str());
     }

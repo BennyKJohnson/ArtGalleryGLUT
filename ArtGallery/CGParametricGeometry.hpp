@@ -235,4 +235,58 @@ public:
 };
 
 
+class CGCube: public CGGeometry {
+    
+public:
+    CGCube() {
+        
+    }
+    
+    void presentationGeometry() {
+        //draws a unit cube
+      
+            glBegin(GL_QUADS);
+            glNormal3f(0.0f, 1.0f, 0.0f);	// top face
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(0.5f, 0.5f, 0.5f);
+            glTexCoord2f(2.0f, 0.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+            glTexCoord2f(2.0f, 2.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
+            glTexCoord2f(0.0f, 2.0f); glVertex3f(-0.5f, 0.5f, 0.5f);
+            
+            glNormal3f(0.0f, 0.0f, 1.0f);	// front face
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(0.5f, 0.5f, 0.5f);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, 0.5f, 0.5f);
+            glTexCoord2f(2.0f, 2.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
+            glTexCoord2f(0.0f, 2.0f); glVertex3f(0.5f, -0.5f, 0.5f);
+            
+            glNormal3f(1.0f, 0.0f, 0.0f);	// right face
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(0.5f, 0.5f, 0.5f);
+            glTexCoord2f(2.0f, 0.0f); glVertex3f(0.5f, -0.5f, 0.5f);
+            glTexCoord2f(2.0f, 2.0f); glVertex3f(0.5f, -0.5f, -0.5f);
+            glTexCoord2f(0.0f, 2.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+            
+            glNormal3f(-1.0f, 0.0f, 0.0f);	// left face
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
+            glTexCoord2f(2.0f, 0.0f); glVertex3f(-0.5f, 0.5f, 0.5f);
+            glTexCoord2f(2.0f, 2.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
+            glTexCoord2f(0.0f, 2.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
+            
+            glNormal3f(0.0f, -1.0f, 0.0f);	// bottom face
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
+            glTexCoord2f(2.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
+            glTexCoord2f(2.0f, 2.0f); glVertex3f(0.5f, -0.5f, -0.5f);
+            glTexCoord2f(0.0f, 2.0f); glVertex3f(0.5f, -0.5f, 0.5f);
+            
+            glNormal3f(0.0f, 0.0f, -1.0f);	// back face
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
+            glTexCoord2f(2.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
+            glTexCoord2f(2.0f, 2.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
+            glTexCoord2f(0.0f, 2.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+            glEnd();
+        
+
+    }
+    
+    
+};
+
 #endif /* CGBox_hpp */

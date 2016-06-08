@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6F60E3911D082F8700852CBC /* check.bmp in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6F60E3901D082F7D00852CBC /* check.bmp */; };
 		6F6265C01CF978D100E2C5D7 /* CGCamera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6F6265AA1CF978D100E2C5D7 /* CGCamera.cpp */; };
 		6F6265C41CF978D100E2C5D7 /* CGLight.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6F6265B21CF978D100E2C5D7 /* CGLight.cpp */; };
 		6F6265C61CF978D100E2C5D7 /* CGNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6F6265B61CF978D100E2C5D7 /* CGNode.cpp */; };
@@ -38,6 +39,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
+				6F60E3911D082F8700852CBC /* check.bmp in CopyFiles */,
 				6FBFB3731D05A7FA0030B3C8 /* Laminate.bmp in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -45,6 +47,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		6F60E3901D082F7D00852CBC /* check.bmp */ = {isa = PBXFileReference; lastKnownFileType = image.bmp; path = check.bmp; sourceTree = "<group>"; };
 		6F62659E1CF978A000E2C5D7 /* ArtGallery */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ArtGallery; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F6265AA1CF978D100E2C5D7 /* CGCamera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CGCamera.cpp; sourceTree = "<group>"; };
 		6F6265AB1CF978D100E2C5D7 /* CGCamera.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CGCamera.hpp; sourceTree = "<group>"; };
@@ -203,6 +206,7 @@
 		6FBFB3711D05A6C20030B3C8 /* Textures */ = {
 			isa = PBXGroup;
 			children = (
+				6F60E3901D082F7D00852CBC /* check.bmp */,
 				6FBFB3721D05A6CA0030B3C8 /* Laminate.bmp */,
 			);
 			name = Textures;

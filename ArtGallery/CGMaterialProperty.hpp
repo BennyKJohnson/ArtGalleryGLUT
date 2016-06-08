@@ -51,15 +51,25 @@ public:
     CGColor color;
     
     CGColor borderColor;
+    
+    CGSize textureScale;
 
     
     CGMaterialProperty(CGTexture* content) {
         
-        wrapS = CGWrapModeClamp;
-        wrapT = CGWrapModeClamp;
+        wrapS = CGWrapModeRepeat;
+        
+        wrapT = CGWrapModeRepeat;
+        
         magnificationFilter = CGFilterModeNearest;
+        
         minificationFilter = CGFilterModeNearest;
+        
         borderColor = CGColor();
+        
+        textureScale.width = 0;
+        textureScale.height = 0;
+        
         
         this->content = content;
         
@@ -129,8 +139,6 @@ public:
                 float color[] = {borderColor.r, borderColor.g, borderColor.b, borderColor.a};
                 glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
             }
-   
-        
     }
 };
 

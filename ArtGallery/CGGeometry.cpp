@@ -55,8 +55,7 @@ void CGGeometry::presentationGeometry() {
     glBindVertexArray(0);
     
     */
-    
-    
+        
     CGGeometrySource *vertexSource = geometrySourceForSemantic(CGGeometrySourceSemanticVertex);
     CGGeometrySource *colorSource = geometrySourceForSemantic(CGGeometrySourceSemanticColor);
     CGGeometrySource *normalSource = geometrySourceForSemantic(CGGeometrySourceSemanticNormal);

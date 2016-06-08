@@ -41,6 +41,8 @@ public:
     
     CGColor backgroundColor;
     
+    CGColor color;
+    
     CGScene();
     
     

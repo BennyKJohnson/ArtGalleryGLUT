@@ -71,6 +71,8 @@ CGNode *spotLightNode;
 
 CGNode *fanNode;
 
+CGNode *cameraNode;
+
 float fps;
 
 GLfloat gAngle = 0.0f;  //cube rotation angle
@@ -204,6 +206,35 @@ void mouseHandler(int x, int y) {
     std::cout << "x: " << x << " y: " << y << std::endl;
 }
 
+void setWireFrameMode(CGColor backgroundColor, CGColor wireColor)
+{
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);    //wireframe mode
+    scene->backgroundColor = backgroundColor;
+    scene->color = wireColor;
+    glDisable(GL_LIGHTING);
+    glutPostRedisplay();
+}
+
+void toggleFlashlight() {
+    if(cameraNode->light == NULL) {
+        
+        CGLight *flashlight =  new CGLight();
+        flashlight->color = CGColorSimpleYellow();
+        flashlight->constantAttenuation = 5.0;
+        flashlight->spotOuterAngle = 30;
+        flashlight->type = CGLightTypeSpot;
+        
+        cameraNode->light = flashlight;
+    } else {
+        CGLight *flashlight = cameraNode->light;
+        delete flashlight;
+        cameraNode->light = NULL;
+    }
+    
+    glutPostRedisplay();
+    
+}
+
 void keyboardHandler(unsigned char key, int x, int y)
 {
     switch(key)
@@ -211,9 +242,22 @@ void keyboardHandler(unsigned char key, int x, int y)
             //if ESC pressed, quit program
         case 27: exit(1);     //quit
             break;
-        case 'w':  setPolygonMode(CGPolygonModeWire);
+            
+        case 'q':
+            setWireFrameMode(CGColorBlack(), CGColorWhite());
             break;
-        case 's':  setPolygonMode(CGPolygonModeSolid);
+        case 'w':
+            setWireFrameMode(CGColorWhite(), CGColorBlack());
+            break;
+        case 'e':
+            setWireFrameMode(CGColorBlue(), CGColorSimpleYellow());
+            break;
+        case 's':
+            setPolygonMode(CGPolygonModeSolid);
+          //  glDisable(GL_LIGHTING);
+           // glDisable(GL_)
+            glEnable(GL_LIGHTING);
+            glutPostRedisplay();
             break;
         case 'z':
             toggleShadeModel();
@@ -248,6 +292,9 @@ void keyboardHandler(unsigned char key, int x, int y)
         case 'h':
             showInstructions = !showInstructions;
             glutPostRedisplay();
+            break;
+        case 'v':
+            toggleFlashlight();
             break;
         case '1':
             // Toggle Light 1
@@ -462,12 +509,15 @@ void setupLights() {
 void setupCamera() {
     // Setup Camera
     CGCamera *sceneCamera = new CGCamera();
-    CGNode *cameraNode = new CGNode();
+    cameraNode = new CGNode();
     // x, y ,z modifiying in z- is back
     cameraNode->position = CGVector3(0,1,5);
     //cameraNode->position = CGVector3(0,10,15);
     cameraNode->camera = sceneCamera;
+
     pointOfView = cameraNode;
+    
+    scene->rootNode->addChildNode(cameraNode);
     
 }
 
@@ -621,16 +671,25 @@ void setupObjects() {
     CGNode *leftChairNode = createChair();
     leftChairNode->position = CGVector3(-2,0,0);
     
+    
+    // Front wall
+    CGPlane *floor = new CGPlane(100,100);
+    CGTexture *floorTexture = new CGTexture("check.bmp");
+    CGMaterial *floorMaterial = new CGMaterial();
+    floorMaterial->diffuse = new CGMaterialProperty(floorTexture);
+    floor->setMaterial(floorMaterial);
+    
+    
     // Floor
-    CGNode *floorNode  = new CGNode(new CGPlane(100,100));
+    CGNode *floorNode  = new CGNode(floor);
     floorNode->position = CGVector3(0, 0, zPosition);
+    floorNode->eulerAngles = CGVector3(180,0,0);
     
     // Roof
     CGNode *roofNode  = new CGNode(new CGPlane(100,100));
     roofNode->position = CGVector3(0, roomHeight, 0);
-    roofNode->rotation = CGVector4(1, 0, 0, 180);
+    //roofNode->rotation = CGVector4(1, 0, 0, -180);
     
-    // Front wall
     CGNode *frontWallNode  = new CGNode(new CGPlane(15,roomHeight));
     frontWallNode->position = CGVector3(0, 0, 7.2);
     frontWallNode->rotation = CGVector4(1, 0, 0, 90);
@@ -638,7 +697,7 @@ void setupObjects() {
     // Back Wall
     CGNode *backWallNode  = new CGNode(new CGPlane(15,roomHeight));
     backWallNode->position = CGVector3(0, 0, -5);
-    backWallNode->rotation = CGVector4(1, 0, 0, 90);
+    backWallNode->rotation = CGVector4(1, 0, 0, -90);
     
     // Left Wall
     CGNode *leftWallNode  = new CGNode(new CGPlane(15,roomHeight));
@@ -648,7 +707,7 @@ void setupObjects() {
     // Left Wall
     CGNode *rightWallNode  = new CGNode(new CGPlane(15,roomHeight));
     rightWallNode->position = CGVector3(7, 0, 0);
-    rightWallNode->eulerAngles = CGVector3(90, 0, 90);
+    rightWallNode->eulerAngles = CGVector3(90, 0, -90);
     
     
     // Teapot
@@ -711,6 +770,17 @@ void setupObjects() {
     icosahedronNode->position = CGVector3(0.7,0.9, zPosition);
     icosahedronNode->scale = CGVector3(0.3,0.3,0.3);
     
+    // Test Cube
+    CGCube *cube = new CGCube();
+    CGTexture *testTexture = new CGTexture("check.bmp");
+    CGMaterial *testMaterial = new  CGMaterial();
+    testMaterial->diffuse = new CGMaterialProperty(testTexture);
+  //  testTexture->diff
+    
+    cube->setMaterial(testMaterial);
+    CGNode *cubeNode = new CGNode(cube);
+    cubeNode->position = CGVector3(0.7,2, zPosition);
+
     // Frame
     float verticalPosition = 2.5;
     CGGeometry *frameGeo = frameGeometry();
@@ -765,9 +835,7 @@ void setupObjects() {
     scene->rootNode->addChildNode(octahedronNode);
     scene->rootNode->addChildNode(tetrahedronNode);
 
-    
     scene->rootNode->addChildNode(icosahedronNode);
- 
     scene->rootNode->addChildNode(monkeyNode);
     
     // Add Frames
@@ -775,7 +843,10 @@ void setupObjects() {
     scene->rootNode->addChildNode(frameNode2);
     scene->rootNode->addChildNode(frameNode3);
     scene->rootNode->addChildNode(fanNode);
-     
+    
+    
+    
+    scene->rootNode->addChildNode(cubeNode);
 }
 
 void setupScene() {
@@ -800,23 +871,28 @@ void initOpenGL() {
     glutIdleFunc(myIdleFunc);
     glEnable(GL_MULTISAMPLE_ARB);
     
+    // Enable Texturing
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
     glEnable(GL_TEXTURE_2D);	// enable 2D texturing
-    GLuint emptyTexture;
-    glGenTextures(1, &emptyTexture);                  // generate texture names
-
-    setupScene();
     
     glClearDepth(1.0f);       // Set background depth to farthest
+ 
     glEnable(GL_LIGHTING);    //enable lighting
     glEnable(GL_DEPTH_TEST);  // Enable depth testing for z-culling
-    
     glDepthFunc(GL_LEQUAL);    // Set the type of depth-test
+    
+    // Setup Blending
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);   // which blending function to use
+    glEnable(GL_BLEND);       // enable blending
+    
     glShadeModel(shadeModel);   // Enable smooth shading
     glutKeyboardFunc(keyboardHandler);
     glutSpecialFunc(specialKeyHandler);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);  // Nice perspective corrections
 
+    setupScene();
+
+    
 }
 
 int main(int argc, char * argv[]) {
