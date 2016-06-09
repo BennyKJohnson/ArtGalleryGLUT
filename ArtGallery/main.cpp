@@ -47,6 +47,8 @@ GLfloat movementSpeed = 0.2;
 
 GLfloat cameraYaw = 0.0;
 
+GLfloat cameraPitch = 0.0;
+
 GLfloat moveForward = 1.0;
 
 GLfloat rotationSpeed = 2;
@@ -79,10 +81,18 @@ GLfloat gAngle = 0.0f;  //cube rotation angle
 
 int frame=0, elapsedTime ,timebase=0;
 
+GLfloat lastX = 400;
+
+GLfloat lastY = 300;
+
+bool hasReceivedInitalMouseMovement = false;
 
 std::string *helpString;
 
 bool showInstructions;
+
+CGVector3 cameraPos = CGVector3(0,0,3);
+
 
 void setOGLProjection(int width, int height) {
     glViewport(0, 0, width, height);
@@ -103,13 +113,45 @@ void windowShouldRedraw() {
     glutPostRedisplay();
 }
 
-void mouseHandler(int button, int state, int x, int y) {
+void mouseDidMove( int xPos, int yPos) {
     
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
+    if (!hasReceivedInitalMouseMovement) {
+        lastX = xPos;
+        lastY = yPos;
         
-        windowShouldRedraw();
-        
+        hasReceivedInitalMouseMovement = true;
     }
+    
+    std::cout << "x: " << xPos << " y: " << yPos << std::endl;
+    
+    GLfloat xOffset = xPos - lastX;
+    GLfloat yOffset = lastY - yPos; // Reversed since y-coordinates range from bottom to top
+    
+    // Update previous positions
+    lastX = xPos;
+    lastY = yPos;
+    
+    GLfloat sensitivity = 0.05f;
+    xOffset *= sensitivity;
+    yOffset *= sensitivity;
+    
+    cameraYaw += xOffset;
+    cameraPitch += yOffset;
+    
+    if (cameraPitch > 89.0) {
+        cameraPitch = 89.0;
+    } else if(cameraPitch < -89.0) {
+        cameraPitch = -89;
+    }
+    
+    CGVector3 front;
+    front.x = cosf(degreesToRadians(cameraYaw)) * cosf(degreesToRadians(cameraPitch));
+    front.y = sinf(degreesToRadians(cameraPitch));
+    front.z = sinf(degreesToRadians(cameraYaw)) * cosf(degreesToRadians(cameraPitch));
+    
+    
+    
+    
 }
 
 void toggleShadeModel() {
@@ -201,10 +243,7 @@ void toggleCullFace() {
     
 }
 
-void mouseHandler(int x, int y) {
-    
-    std::cout << "x: " << x << " y: " << y << std::endl;
-}
+
 
 void setWireFrameMode(CGColor backgroundColor, CGColor wireColor)
 {
@@ -331,7 +370,7 @@ void myIdleFunc()
         sprintf(buff,"FPS:%4.2f",fps);
         fpsString = buff;
         
-        std::cout << "FPS: " << fps << std::endl;
+       // std::cout << "FPS: " << fps << std::endl;
     }
     
     
@@ -491,8 +530,15 @@ void setupLights() {
     leftLightNode->light = leftLight;
     leftLightNode->geometry = lightSphere;
     
-    // Spot Light
+    CGLight *fanLight = new CGLight();
+    fanLight->color = CGColorWhite();
+    CGNode *fanLightNode = new CGNode();
+    fanLightNode->position =  CGVector3(0.7,3.8, 0);
+    fanLightNode->light = fanLight;
+    //fanLightNode->geometry = lightSphere;
     
+    
+    // Spot Light
     spotLightNode = new CGNode();
     spotLightNode->position = CGVector3(0,5,0);
     CGLight *spotlight = new CGLight();
@@ -504,6 +550,8 @@ void setupLights() {
     scene->rootNode->addChildNode(rightLightNode);
     scene->rootNode->addChildNode(leftLightNode);
     scene->rootNode->addChildNode(spotLightNode);
+    scene->rootNode->addChildNode(fanLightNode);
+    
 }
 
 void setupCamera() {
@@ -867,7 +915,9 @@ void initOpenGL() {
     
     glutDisplayFunc(render);
     glutReshapeFunc(resize);
-    glutMouseFunc(mouseHandler);
+ //   glutMouseFunc(mouseHandler);
+ //   glutMouseFunc(mouseHandler);
+    glutPassiveMotionFunc(mouseDidMove);
     glutIdleFunc(myIdleFunc);
     glEnable(GL_MULTISAMPLE_ARB);
     

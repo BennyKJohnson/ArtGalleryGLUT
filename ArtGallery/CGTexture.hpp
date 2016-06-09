@@ -33,7 +33,7 @@ public:
         int width;
         int height;
         
-        /*
+        
         unsigned char *data = SOIL_load_image
         (
          filename,
@@ -45,8 +45,8 @@ public:
         
         size.width = (float)width;
         size.height = (float)height;
-        */
-        pixelData = loadBMPFile(filename);
+        
+       // pixelData = loadBMPFile(filename);
         
     }
     
