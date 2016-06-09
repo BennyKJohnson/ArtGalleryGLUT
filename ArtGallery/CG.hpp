@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <math.h>
+#include <iostream>
 
 typedef enum CGPolygonMode {
     CGPolygonModeSolid,
@@ -39,6 +41,59 @@ typedef struct CGVector3 {
     {
         return x == rhs.x && y == rhs.y && z == rhs.z;
     }
+    
+    CGVector3 operator+=(CGVector3 const & v) {
+        return CGVector3(x + v.x, y + v.y, z + v.z);
+    }
+    CGVector3 operator-=(CGVector3 const & v) {
+        return CGVector3( v.x - x, v.y - y, v.z - z);
+    }
+    
+    
+    CGVector3 operator-(CGVector3 const & v) {
+        return CGVector3(x - v.x, y - v.y, z - v.z);
+    }
+    
+    CGVector3 operator+(CGVector3 const & v) {
+        return CGVector3(x + v.x, y + v.y, z + v.z);
+    }
+
+    CGVector3 operator*(float const & v) {
+        return CGVector3(x * v, y * v, z * v);
+    }
+
+    
+    CGVector3 crossProduct ( const CGVector3 & vec )
+    {
+        float a = y * vec.z - z * vec.y ;
+        float b = z * vec.x - x * vec.z ;
+        float c = x * vec.y - y * vec.x ;
+        return CGVector3( a , b , c );
+    }
+    
+    CGVector3 normalize()
+    {
+        const float length = sqrt( ( x * x ) +
+                                  ( y * y) +
+                                  ( z * z ) );
+        if( length != 1 )
+        {
+            return CGVector3((x / length),
+                             (y / length),
+                             (z / length));
+            
+        }
+        
+        return CGVector3(x,y,z);
+    }
+    
+    friend std::ostream &operator<<( std::ostream &output,
+                               const CGVector3 &v )
+    {
+        output << "x: " << v.x << " y: " << v.y << " z: " << v.z;
+        return output;
+    }
+    
     
 } CGVector3;
 

@@ -41,6 +41,20 @@ enum ContextMenu {
     Exit
 };
 
+enum CGDisplayMode {
+    CGDisplayModeDefault,
+    CGDisplayModeColored,
+    CGDisplayModeShadedOnly,
+    CGDisplayModeTexturedWithoutLighting,
+};
+
+enum CGModifyMode {
+    CGModifyModeNone,
+    CGModifyModeShading,
+    CGModifyModeLighting,
+    CGModifyModeWire
+};
+
 GLfloat aspect;
 
 GLfloat movementSpeed = 0.2;
@@ -85,13 +99,23 @@ GLfloat lastX = 400;
 
 GLfloat lastY = 300;
 
+CGModifyMode modifyMode = CGModifyModeNone;
+
 bool hasReceivedInitalMouseMovement = false;
 
 std::string *helpString;
 
 bool showInstructions;
 
-CGVector3 cameraPos = CGVector3(0,0,3);
+CGVector3 cameraFront = CGVector3(0, 0 ,-1);
+
+CGVector3 cameraUp = CGVector3(0,1,0);
+
+// Static variable init
+bool CGMaterial::texturesEnabled = true;
+
+void setWireFrameMode(CGColor backgroundColor, CGColor wireColor);
+
 
 
 void setOGLProjection(int width, int height) {
@@ -113,6 +137,82 @@ void windowShouldRedraw() {
     glutPostRedisplay();
 }
 
+void setDisplayMode(CGDisplayMode displayMode) {
+    switch (displayMode) {
+        case CGDisplayModeDefault:
+            glEnable(GL_LIGHTING);
+            glEnable(GL_TEXTURE_2D);	// enable 2D texturing
+            break;
+        case CGDisplayModeColored:
+            glDisable(GL_LIGHTING);
+            glDisable(GL_TEXTURE_2D);
+            break;
+        case CGDisplayModeShadedOnly:
+            glEnable(GL_LIGHTING);
+            glDisable(GL_TEXTURE_2D);
+            break;
+        case CGDisplayModeTexturedWithoutLighting:
+            glEnable(GL_TEXTURE_2D);
+            glDisable(GL_LIGHTING);
+            break;
+    }
+    
+    glutPostRedisplay();
+}
+
+void didPressNumKey(int index) {
+    switch (modifyMode) {
+        case CGModifyModeWire:
+            switch (index) {
+                case 1:
+                    setWireFrameMode(CGColorBlack(), CGColorWhite());
+                    break;
+                case 2:
+                    setWireFrameMode(CGColorWhite(), CGColorBlack());
+                    break;
+                case 3:
+                    setWireFrameMode(CGColorBlue(), CGColorSimpleYellow());
+                default:
+                    return;
+            }
+            break;
+        case CGModifyModeShading: {
+            
+            int enumIndex = index - 1;
+            if (enumIndex < 4) {
+                CGDisplayMode shadingMode = (CGDisplayMode)enumIndex;
+                setDisplayMode(shadingMode);
+            }
+            break;
+            
+            
+        }
+          
+        default:
+            break;
+    }
+}
+
+void setModifyMode(CGModifyMode mode) {
+    
+    switch (mode) {
+        case CGModifyModeWire:
+            std:: cout << "Setting WireMode" << std::endl;
+            
+            break;
+        case CGModifyModeShading:
+            std:: cout << "Setting Shading Mode" << std::endl;
+
+        default:
+            break;
+    }
+    
+    
+    
+    modifyMode = mode;
+}
+
+
 void mouseDidMove( int xPos, int yPos) {
     
     if (!hasReceivedInitalMouseMovement) {
@@ -122,8 +222,6 @@ void mouseDidMove( int xPos, int yPos) {
         hasReceivedInitalMouseMovement = true;
     }
     
-    std::cout << "x: " << xPos << " y: " << yPos << std::endl;
-    
     GLfloat xOffset = xPos - lastX;
     GLfloat yOffset = lastY - yPos; // Reversed since y-coordinates range from bottom to top
     
@@ -131,7 +229,7 @@ void mouseDidMove( int xPos, int yPos) {
     lastX = xPos;
     lastY = yPos;
     
-    GLfloat sensitivity = 0.05f;
+    GLfloat sensitivity = 0.3;
     xOffset *= sensitivity;
     yOffset *= sensitivity;
     
@@ -149,7 +247,7 @@ void mouseDidMove( int xPos, int yPos) {
     front.y = sinf(degreesToRadians(cameraPitch));
     front.z = sinf(degreesToRadians(cameraYaw)) * cosf(degreesToRadians(cameraPitch));
     
-    
+    cameraFront = front.normalize();
     
     
 }
@@ -185,13 +283,19 @@ void setPolygonMode(CGPolygonMode mode) {
     windowShouldRedraw();
 }
 
+void setCamera(CGVector3 camPosition, CGVector3 lookAt, CGVector3 camUp) {
+    
+   //  glLoadIdentity();
+    gluLookAt(camPosition.x, camPosition.y, camPosition.z, lookAt.x, lookAt.y, lookAt.z, camUp.x, camUp.y,camUp.z);
+}
+
 void updateCamera() {
     
     if (cameraYaw > 360.0) {
         cameraYaw -= 360.0;
     } else if(cameraYaw < 0.0)
         cameraYaw += 360.0;
-    
+    /*
     pointOfView->position.x += sinf(DEG2RAD(cameraYaw)) * moveForward;
     pointOfView->position.z += -cos(DEG2RAD(cameraYaw)) * moveForward;
     
@@ -200,16 +304,25 @@ void updateCamera() {
     float lookAtX =  pointOfView->position.x + sin(DEG2RAD(cameraYaw));
     float lookAtZ =  pointOfView->position.z - cos(DEG2RAD(cameraYaw));
     
+    */
+    float lookAtX = 0;
+    float lookAtZ = 0;
     
     glLoadIdentity();
     
     // Enable perspective projection with fovy, aspect, zNear and zFar
     CGCamera *camera = pointOfView->camera;
     gluPerspective(camera->yFov, aspect, camera->zNear, camera->zFar);
-    
-    gluLookAt(pointOfView->position.x, pointOfView->position.y, pointOfView->position.z, lookAtX, 1.0, lookAtZ, 0, 1, 0);
- 
+  //  CGVector3 look = CGVector3(lookAtX, 1.0, lookAtZ);
+    // pointOfView->position +
+    std::cout << "Camera Position: " << pointOfView->position << std::endl;
+    std::cout << "Camera Front: " << cameraFront << std::endl;
 
+    CGVector3 lookAt = cameraFront + pointOfView->position;
+    std::cout << "Looking At: " << lookAt.x << ", " << lookAt.y << ", " << lookAt.z << std::endl;
+    
+    setCamera(pointOfView->position,  lookAt, cameraUp);
+    
     glutPostRedisplay();
    // windowShouldRedraw();
 }
@@ -286,10 +399,14 @@ void keyboardHandler(unsigned char key, int x, int y)
             setWireFrameMode(CGColorBlack(), CGColorWhite());
             break;
         case 'w':
-            setWireFrameMode(CGColorWhite(), CGColorBlack());
+            setModifyMode(CGModifyModeWire);
+           // setWireFrameMode(CGColorWhite(), CGColorBlack());
             break;
         case 'e':
             setWireFrameMode(CGColorBlue(), CGColorSimpleYellow());
+            break;
+        case 'z':
+            setModifyMode(CGModifyModeShading);
             break;
         case 's':
             setPolygonMode(CGPolygonModeSolid);
@@ -298,10 +415,11 @@ void keyboardHandler(unsigned char key, int x, int y)
             glEnable(GL_LIGHTING);
             glutPostRedisplay();
             break;
+            /*
         case 'z':
             toggleShadeModel();
             break;
-        
+        */
         case 'd':
             toggleOpenGLSetting(GL_DEPTH_TEST);
             break;
@@ -336,17 +454,23 @@ void keyboardHandler(unsigned char key, int x, int y)
             toggleFlashlight();
             break;
         case '1':
+            didPressNumKey(1);
             // Toggle Light 1
-            leftLightNode->hidden = !leftLightNode->hidden;
+            //leftLightNode->hidden = !leftLightNode->hidden;
             break;
         case '2':
+            didPressNumKey(2);
             // Toggle Light 2
-            rightLightNode->hidden = !rightLightNode->hidden;
+          //  rightLightNode->hidden = !rightLightNode->hidden;
             break;
         case '3':
-            spotLightNode->hidden = !spotLightNode->hidden;
+            didPressNumKey(3);
+            //spotLightNode->hidden = !spotLightNode->hidden;
             break;
-            
+        case '4':
+            didPressNumKey(4);
+           // setDisplayMode(CGDisplayModeShadedOnly);
+            break;
             
         default:
             break;
@@ -391,6 +515,8 @@ void myIdleFunc()
 //called when non-ASCII key pressed
 void specialKeyHandler(int key, int x, int y)
 {
+    
+    float cameraSpeed = 0.2f;
     switch(key)
     {
             //if home pressed
@@ -404,31 +530,58 @@ void specialKeyHandler(int key, int x, int y)
             //     gCameraLookAt[1] -= gMovementSensitivity;
             break;
             //if arrow up pressed
-        case GLUT_KEY_UP:
+        case GLUT_KEY_UP: {
+            CGVector3 newPosition = CGVector3(cameraFront.x * cameraSpeed, cameraFront.y * cameraSpeed, cameraFront.z * cameraSpeed);
+            std::cout << "New Position: " << newPosition << std::endl;
+            CGVector3 oldPos = pointOfView->position;
+            std::cout << "Previous Camera Position: " << oldPos << std::endl;
+            CGVector3 newCameraPosition = CGVector3(oldPos.x + newPosition.x, oldPos.y + newPosition.y, oldPos.z + newPosition.z);
+            pointOfView->position = newCameraPosition;
+            
+            break;
+
+        }
           //  teapotNode->position.x += 1;
            // pointOfView->position.x += movementSpeed;
-            moveForward += movementSpeed;
-            //gMoveForward += gMovementSensitivity;             //increment forward movement
-            break;
-            //if arrow down pressed
-        case GLUT_KEY_DOWN:
-            moveForward -= movementSpeed;
-
-            //gMoveForward -= gMovementSensitivity;             //increment backward movement
-            break;
-            //if left pressed
-        case GLUT_KEY_LEFT:
-          //  pointOfView->position.x -= movementSpeed;
-            cameraYaw -= rotationSpeed;
+      
+            //pointOfView->position += cameraSpeed * cameraFront;
             
-            //gCameraYaw -= gRotationSensitivity;               //increment camera yaw
+            //gMoveForward += gMovementSensitivity;             //increment forward movement
+            //if arrow down pressed
+        case GLUT_KEY_DOWN: {
+            CGVector3 oldPos = pointOfView->position;
+
+            CGVector3 newPosition = CGVector3(cameraFront.x * cameraSpeed, cameraFront.y * cameraSpeed, cameraFront.z * cameraSpeed);
+            CGVector3 newCameraPosition = CGVector3(oldPos.x - newPosition.x, oldPos.y - newPosition.y, oldPos.z - newPosition.z);
+
+            pointOfView->position = newCameraPosition;
+            
             break;
+        }
+
+            //if left pressed
+        case GLUT_KEY_LEFT: {
+            CGVector3 previousPos = pointOfView->position;
+            CGVector3 newPos = cameraFront.crossProduct(cameraUp).normalize() * cameraSpeed;
+            
+            pointOfView->position = CGVector3(previousPos.x - newPos.x, previousPos.y - newPos.y, previousPos.z - newPos.z);
+
+            break;
+        }
+
+            
             //if right pressed
-        case GLUT_KEY_RIGHT:
-            //pointOfView->position.x += movementSpeed;
-            cameraYaw += rotationSpeed;
-            //gCameraYaw += gRotationSensitivity;              //decrement camera yaw
+        case GLUT_KEY_RIGHT: {
+            
+            CGVector3 previousPos = pointOfView->position;
+            CGVector3 newPos = cameraFront.crossProduct(cameraUp).normalize() * cameraSpeed;
+            
+            pointOfView->position = CGVector3(previousPos.x + newPos.x, previousPos.y + newPos.y, previousPos.z + newPos.z);
             break;
+
+        }
+      
+
         default: break;
     };
     updateCamera();
@@ -454,6 +607,7 @@ void resize(int width, int height) {
    // glLoadIdentity();             // Reset
     updateCamera();
     
+    
   }
 
 
@@ -477,29 +631,18 @@ void render(void) {
     glMatrixMode(GL_MODELVIEW);     // To operate on model-view matrix
 
     glLoadIdentity();
-    
-    
+    CGVector3 lookAt = cameraFront + pointOfView->position;
 
-    
+    setCamera(pointOfView->position,  lookAt, cameraUp);
+
     if (showInstructions) {
         setContextColor(CGColorWhite());
         renderBitmapString(-2.0, -0.9, helpString, GLUT_BITMAP_HELVETICA_12);
         renderBitmapString(-2.8, -0.9, &fpsString, GLUT_BITMAP_HELVETICA_12);
-        
-        
     }
 
-    
-    
-    // Setup Camera
-    // actual vector representing the camera's direction
-    float lookAtX =  pointOfView->position.x + sin(DEG2RAD(cameraYaw));
-    float lookAtZ =  pointOfView->position.z - cos(DEG2RAD(cameraYaw));
-    
-    gluLookAt(pointOfView->position.x, pointOfView->position.y, pointOfView->position.z, lookAtX, 1.0, lookAtZ, 0, 1, 0);
-
     scene->render();
-    
+
     glPushMatrix();
     glLoadIdentity();
    
@@ -559,7 +702,7 @@ void setupCamera() {
     CGCamera *sceneCamera = new CGCamera();
     cameraNode = new CGNode();
     // x, y ,z modifiying in z- is back
-    cameraNode->position = CGVector3(0,1,5);
+    cameraNode->position = CGVector3(0,0,3);
     //cameraNode->position = CGVector3(0,10,15);
     cameraNode->camera = sceneCamera;
 

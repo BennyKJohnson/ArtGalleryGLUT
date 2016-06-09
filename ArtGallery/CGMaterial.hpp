@@ -17,11 +17,14 @@
 
 class CGMaterial {
     
+    
     void loadTexture(CGTexture *texture);
     
     void loadMaterialProperty(CGMaterialProperty *property, GLenum type);
 
 public:
+    
+    static bool texturesEnabled;
     
     std::string *name;
     
@@ -62,5 +65,7 @@ public:
     
     void loadMaterial();
 };
+
+
 
 #endif /* CGMaterial_hpp */
