@@ -634,18 +634,33 @@ void render(void) {
     CGVector3 lookAt = cameraFront + pointOfView->position;
 
     setCamera(pointOfView->position,  lookAt, cameraUp);
-
-    if (showInstructions) {
-        setContextColor(CGColorWhite());
-        renderBitmapString(-2.0, -0.9, helpString, GLUT_BITMAP_HELVETICA_12);
-        renderBitmapString(-2.8, -0.9, &fpsString, GLUT_BITMAP_HELVETICA_12);
-    }
-
+    
     scene->render();
 
+    glMatrixMode(GL_PROJECTION);
+
+    glPushMatrix();
+
+    glLoadIdentity();
+    //glViewport(0, 0, 800, 600);
+
+    gluOrtho2D(0.0, 800, 0.0, 600);
+    glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-   
+    
+    if (showInstructions) {
+        setContextColor(CGColorWhite());
+        renderBitmapString(0, 30, helpString, GLUT_BITMAP_HELVETICA_12);
+        renderBitmapString(0, 10, &fpsString, GLUT_BITMAP_HELVETICA_12);
+    }
+
+    
+    
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
     
     glutSwapBuffers();
 }
