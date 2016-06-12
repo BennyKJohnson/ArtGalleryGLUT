@@ -93,15 +93,16 @@ void CGGeometry::presentationGeometry() {
         }
         
         if (normalArray != NULL) {
-            float normalX = dataArray[vertexIndex+0];
-            float normalY = dataArray[vertexIndex+1];
-            float normalZ = dataArray[vertexIndex+2];
+            float normalX = normalArray[vertexIndex+0];
+            float normalY = normalArray[vertexIndex+1];
+            float normalZ = normalArray[vertexIndex+2];
             glNormal3f(normalX, normalY, normalZ);
         }
         
         if (texCoordArray != NULL) {
-            float s = dataArray[vertexIndex+0];
-            float t = dataArray[vertexIndex+1];
+            int texCoordIndex = i * texCoordSource->componentsPerVector;
+            float s = texCoordArray[texCoordIndex+0];
+            float t = texCoordArray[texCoordIndex+1];
             glTexCoord2f(s, t);
         }
         

@@ -61,6 +61,23 @@ public:
         
         doubleSided = false;
         
+        textureID = 0;
+        
+    }
+    
+    CGMaterial(CGTexture *texture) {
+        
+        diffuse = new CGMaterialProperty(texture);
+        
+        specular = new CGMaterialProperty(CGColor(0, 0, 0, 1));
+        
+        emission = new CGMaterialProperty(CGColor(0, 0 , 0, 1));
+        
+        ambient = new CGMaterialProperty(CGColor(0.2, 0.2, 0.2, 1));
+
+        shininess = 0;
+        
+        textureID = 0;
     }
     
     void loadMaterial();

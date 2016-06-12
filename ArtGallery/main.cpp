@@ -27,7 +27,9 @@
 #include "monkey.h"
 #include "frame.h"
 #include "fan.h"
+#include "banana.h"
 #include "jitter.h"
+#include <dirent.h>
 
 #define MY_PI 		(3.14159265359)    //declare PI value
 #define DEG2RAD(a) 	(MY_PI/180*(a))    //convert degrees into radians
@@ -80,13 +82,17 @@ bool yellowAmbientEnabled = false;
 
 bool translucentSurfaces = true;
 
-bool antiAliasing = true;
+bool antiAliasing = false;
+
+bool stencilBuffering  = true;
 
 void resetCamera();
 
 int accumulationSize = 8;
 
 // Global Nodes
+
+CGNode *floorNode;
 
 CGLight *light;
 
@@ -114,6 +120,7 @@ int frame=0, elapsedTime ,timebase=0;
 GLfloat lastX = 400;
 
 GLfloat lastY = 300;
+
 
 CGModifyMode modifyMode = CGModifyModeNone;
 
@@ -267,7 +274,7 @@ void mouseDidMove( int xPos, int yPos) {
     
     cameraFront = front.normalize();
     
-    
+    glutPostRedisplay();
 }
 
 void toggleShadeModel() {
@@ -382,6 +389,7 @@ void setWireFrameMode(CGColor backgroundColor, CGColor wireColor)
     scene->backgroundColor = backgroundColor;
     scene->color = wireColor;
     glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
     glutPostRedisplay();
 }
 
@@ -405,6 +413,46 @@ void toggleFlashlight() {
     
 }
 
+char* getLastScreenshot() {
+    
+    DIR           *directory;
+    struct dirent *dir;
+    directory = opendir("screenshots");
+    
+    char *filename = NULL;
+    if (directory) {
+        while ((dir = readdir(directory)) != NULL)
+        {
+            if(filename == NULL) {
+                filename = new char[256];
+            }
+            unsigned long length = strlen(dir->d_name);
+            printf("%s\n", dir->d_name);
+            strcpy(filename, dir->d_name);
+            filename[length] = '\0';
+        }
+        closedir(directory);
+        
+    }
+    
+    printf("LAST SCREENSHOT %s\n", filename);
+
+    return filename;
+}
+
+CGTexture* loadScreenshotTexture() {
+    
+    char screenshotURL[512] = "screenshots/";
+    char *screenshotFilename = getLastScreenshot();
+    if(screenshotFilename != NULL) {
+        strcat(screenshotURL, screenshotFilename);        
+        CGTexture *texture = new CGTexture(screenshotURL);
+        return texture;
+    } else {
+        return NULL;
+    }
+}
+
 void takeScreenshot() {
 
     int exists = mkdir("screenshots", S_IRWXU);
@@ -426,14 +474,18 @@ void takeScreenshot() {
         std::cout << "Failed to save screenshot" << std::endl;
     }
     
-    /*
+    getLastScreenshot();
+    
+    
+    
     // Load Texture
-    CGMaterialProperty *oldScrenshotMaterial = screenshotMaterialProperty;
-    screenshotMaterialProperty = new CGMaterialProperty(new CGTexture("screenshot.bmp"));
+    CGTexture *screenshotTexture = loadScreenshotTexture();
+    if(screenshotTexture) {
+        screenshotMaterialProperty->content = screenshotTexture;
+        std::cout << "FrameMaterial Address: " << screenshotMaterialProperty << std::endl;
 
-
-    delete oldScrenshotMaterial;
-     */
+    }
+    
 }
 
 
@@ -449,8 +501,9 @@ void keyboardHandler(unsigned char key, int x, int y)
             glutPostRedisplay();
             std::cout << "antiAliasing " << antiAliasing << std::endl;
             break;
+        
         case 'q':
-            setWireFrameMode(CGColorBlack(), CGColorWhite());
+            exit(0);
             break;
         case 'w':
             setModifyMode(CGModifyModeWire);
@@ -710,6 +763,51 @@ void renderHUD() {
     glPopMatrix();
 }
 
+void renderStencilBuffer() {
+    // Setup Stencil Buffer
+    if (true) {
+        
+        glDisable(GL_DEPTH_TEST);
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glEnable(GL_STENCIL_TEST);
+        glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+        glStencilFunc(GL_ALWAYS, 1, 0xffffffff);
+        
+        glPushMatrix();
+        glScalef(1.0f, -1.0f, 1.0f); //flip the reflection vertically
+        glTranslatef(0,2,0); //translate the reflection onto the
+        glRotatef(40,0,1,0); //rotate the reflection
+
+        scene->renderNode(floorNode);
+        
+        glPopMatrix();
+        
+        /* Re-enable update of color and depth. */
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_STENCIL_TEST); //disable the stencil testing
+        
+        /* Now, only render where stencil is set to 1. */
+        glStencilFunc(GL_EQUAL, 1, 0xffffffff);  /* draw if ==1 */
+        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+        
+    }
+}
+
+void standardRender() {
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    //      glClearStencil(0);
+    
+    glMatrixMode(GL_MODELVIEW);     // To operate on model-view matrix
+    
+    glLoadIdentity();
+    CGVector3 lookAt = cameraFront + pointOfView->position;
+    setCamera(pointOfView->position,  lookAt, cameraUp);
+    
+    
+    scene->render();
+
+}
 
 void render(void) {
     
@@ -727,22 +825,32 @@ void render(void) {
     }
     
 
-    glClear(GL_ACCUM_BUFFER_BIT);
+   glClear(GL_ACCUM_BUFFER_BIT);
 
     for (int jitter = 0; jitter < jitterSize; jitter++) {
         //  Clear screen and Z-buffer
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+  //      glClearStencil(0);
+
         glMatrixMode(GL_MODELVIEW);     // To operate on model-view matrix
         
         glLoadIdentity();
         CGVector3 lookAt = cameraFront + pointOfView->position;
         setCamera(pointOfView->position,  lookAt, cameraUp);
         
+        // Setup Jittering
         glPushMatrix();
         if (antiAliasing) {
+            
             glTranslatef (j8[jitter].x*4.5/viewport[2],
                           j8[jitter].y*4.5/viewport[3], 0.0);
+             
         }
+        
+        if (stencilBuffering) {
+            //renderStencilBuffer();
+        }
+        
     
         scene->render();
         glPopMatrix();
@@ -953,6 +1061,20 @@ CGGeometry* fanGeometry() {
     geometry->geometrySources.push_back(texCoordSource);
     
     return geometry;
+}
+
+
+CGGeometry *bananaGeometry() {
+    CGGeometry *geometry = new CGGeometry();
+    CGGeometrySource *vertexSource = new CGGeometrySource(bananaVerts, CGGeometrySourceSemanticVertex, bananaNumVerts, 3, sizeof(CGVector3));
+    CGGeometrySource *normalSource = new CGGeometrySource(bananaNormals,CGGeometrySourceSemanticNormal, bananaNumVerts,3 , sizeof(CGVector3));
+    CGGeometrySource *texCoordSource = new CGGeometrySource(bananaTexCoords, CGGeometrySourceSemanticTexcoord, bananaNumVerts,2, sizeof(CGPoint));
+    
+    geometry->geometrySources.push_back(vertexSource);
+    geometry->geometrySources.push_back(normalSource);
+    geometry->geometrySources.push_back(texCoordSource);
+    
+    return geometry;
     
     
 }
@@ -979,11 +1101,13 @@ void setupObjects() {
     CGTexture *floorTexture = new CGTexture("check.bmp");
     CGMaterial *floorMaterial = new CGMaterial();
     floorMaterial->diffuse = new CGMaterialProperty(floorTexture);
+    floorMaterial->diffuse->wrapS = CGWrapModeRepeat;
+    floorMaterial->diffuse->wrapT = CGWrapModeRepeat;
     floor->setMaterial(floorMaterial);
     
     
     // Floor
-    CGNode *floorNode  = new CGNode(floor);
+    floorNode  = new CGNode(floor);
     floorNode->position = CGVector3(0, 0, zPosition);
     floorNode->eulerAngles = CGVector3(180,0,0);
     
@@ -1083,16 +1207,25 @@ void setupObjects() {
     CGNode *cubeNode = new CGNode(cube);
     cubeNode->position = CGVector3(0.7,2, zPosition);
 
+    CGGeometry *banana = bananaGeometry();
+    CGTexture *bananaTexture = new CGTexture("banana.jpg");
+    banana->setMaterial(new CGMaterial(bananaTexture));
+    CGNode *bananaNode = new CGNode(banana);
+    bananaNode->position = CGVector3(0.7,2, zPosition);
+   
+    
     // Frame
     float verticalPosition = 2.5;
     
-    CGTexture *screenshotTexture = new CGTexture("screenshot.bmp");
     CGMaterial *frameMaterial = new CGMaterial();
+    CGTexture *texture = loadScreenshotTexture();
     
-    screenshotMaterialProperty = new CGMaterialProperty(screenshotTexture);
-    
-    frameMaterial->diffuse = screenshotMaterialProperty;
-
+    if(texture != NULL) {
+        screenshotMaterialProperty = new CGMaterialProperty(texture);
+        
+        frameMaterial->diffuse = screenshotMaterialProperty;
+        std::cout << "FrameMaterial Address: " << frameMaterial->diffuse << std::endl;
+    }
     CGGeometry *frameGeo = frameGeometry();
     frameGeo->setMaterial(frameMaterial);
     
@@ -1101,15 +1234,24 @@ void setupObjects() {
     frameNode->eulerAngles = CGVector3(0, 0, 180);
     frameNode->scale = CGVector3(2,2,2);
     
-    CGNode *frameNode2 = new CGNode(frameGeo);
+    
+    CGGeometry *frameGeo2 = frameGeometry();
+    frameGeo2->setMaterial(new CGMaterial(new CGTexture("threemusicians.jpg")));
+    
+    CGGeometry *frameGeo3 = frameGeometry();
+    frameGeo3->setMaterial(new CGMaterial(new CGTexture("bliss.jpg")));
+    
+    
+    CGNode *frameNode2 = new CGNode(frameGeo2);
     frameNode2->position =  CGVector3(6, verticalPosition, 1);
     frameNode2->eulerAngles = CGVector3(0, 0, 180);
     frameNode2->scale = CGVector3(2,2,2);
     
-    CGNode *frameNode3 = new CGNode(frameGeo);
+    CGNode *frameNode3 = new CGNode(frameGeo3);
     frameNode3->position =  CGVector3(6, verticalPosition, 4);
     frameNode3->eulerAngles = CGVector3(0, 0, 180);
     frameNode3->scale = CGVector3(2,2,2);
+    
     
     CGGeometry *fan = fanGeometry();
     CGTexture *fanTexture = new  CGTexture(new std::string("Laminate.bmp"));
@@ -1154,10 +1296,10 @@ void setupObjects() {
     scene->rootNode->addChildNode(frameNode2);
     scene->rootNode->addChildNode(frameNode3);
     scene->rootNode->addChildNode(fanNode);
+    scene->rootNode->addChildNode(bananaNode);
     
     
-    
-    scene->rootNode->addChildNode(cubeNode);
+   // scene->rootNode->addChildNode(cubeNode);
 }
 
 void setupScene() {
@@ -1216,7 +1358,7 @@ int main(int argc, char * argv[]) {
     glutInit(&argc, argv);
 #endif
     
-    glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE | GLUT_DOUBLE | GLUT_ACCUM);      //requests properties for the window (sets up the rendering context)
+    glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE | GLUT_DOUBLE | GLUT_ACCUM );      //requests properties for the window (sets up the rendering context)
 
     //Specify the Display Mode, this one means there is a single buffer and uses RGB to specify colors
     // glutInitDisplayMode(GLUT_DEPTH| GLUT_DOUBLE |GLUT_RGB);

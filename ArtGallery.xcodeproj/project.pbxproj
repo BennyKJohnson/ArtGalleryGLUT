@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6F27EEBE1D0CFF9D00E40992 /* banana.jpg in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6F27EEBC1D0CFE9D00E40992 /* banana.jpg */; };
+		6F27EF011D0D229700E40992 /* threemusicians.jpg in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6F27EF001D0D21D100E40992 /* threemusicians.jpg */; };
+		6F27EF031D0D6A1700E40992 /* bliss.jpg in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6F27EF021D0D69C600E40992 /* bliss.jpg */; };
 		6F60E3911D082F8700852CBC /* check.bmp in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6F60E3901D082F7D00852CBC /* check.bmp */; };
 		6F60E3931D0844A600852CBC /* woodFloor.jpg in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6F60E3921D08449200852CBC /* woodFloor.jpg */; };
 		6F6265C01CF978D100E2C5D7 /* CGCamera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6F6265AA1CF978D100E2C5D7 /* CGCamera.cpp */; };
@@ -40,6 +43,9 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
+				6F27EF031D0D6A1700E40992 /* bliss.jpg in CopyFiles */,
+				6F27EF011D0D229700E40992 /* threemusicians.jpg in CopyFiles */,
+				6F27EEBE1D0CFF9D00E40992 /* banana.jpg in CopyFiles */,
 				6F60E3931D0844A600852CBC /* woodFloor.jpg in CopyFiles */,
 				6F60E3911D082F8700852CBC /* check.bmp in CopyFiles */,
 				6FBFB3731D05A7FA0030B3C8 /* Laminate.bmp in CopyFiles */,
@@ -51,6 +57,10 @@
 /* Begin PBXFileReference section */
 		6F1B3CAB1D0C2EE30028B843 /* frame.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = frame.h; sourceTree = "<group>"; };
 		6F27EEBB1D0CF14F00E40992 /* jitter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jitter.h; sourceTree = "<group>"; };
+		6F27EEBC1D0CFE9D00E40992 /* banana.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = banana.jpg; sourceTree = "<group>"; };
+		6F27EEBD1D0CFEA600E40992 /* banana.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = banana.h; sourceTree = "<group>"; };
+		6F27EF001D0D21D100E40992 /* threemusicians.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = threemusicians.jpg; sourceTree = "<group>"; };
+		6F27EF021D0D69C600E40992 /* bliss.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = bliss.jpg; sourceTree = "<group>"; };
 		6F60E3901D082F7D00852CBC /* check.bmp */ = {isa = PBXFileReference; lastKnownFileType = image.bmp; path = check.bmp; sourceTree = "<group>"; };
 		6F60E3921D08449200852CBC /* woodFloor.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = woodFloor.jpg; sourceTree = "<group>"; };
 		6F62659E1CF978A000E2C5D7 /* ArtGallery */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ArtGallery; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -200,6 +210,7 @@
 		6FBFB3631D0591030030B3C8 /* Geometry */ = {
 			isa = PBXGroup;
 			children = (
+				6F27EEBD1D0CFEA600E40992 /* banana.h */,
 				6F1B3CAB1D0C2EE30028B843 /* frame.h */,
 				6FBFB3701D059EA80030B3C8 /* fan.h */,
 				6FBFB36E1D0592410030B3C8 /* monkey.h */,
@@ -211,9 +222,12 @@
 		6FBFB3711D05A6C20030B3C8 /* Textures */ = {
 			isa = PBXGroup;
 			children = (
+				6F27EF001D0D21D100E40992 /* threemusicians.jpg */,
+				6F27EEBC1D0CFE9D00E40992 /* banana.jpg */,
 				6F60E3901D082F7D00852CBC /* check.bmp */,
 				6F60E3921D08449200852CBC /* woodFloor.jpg */,
 				6FBFB3721D05A6CA0030B3C8 /* Laminate.bmp */,
+				6F27EF021D0D69C600E40992 /* bliss.jpg */,
 			);
 			name = Textures;
 			sourceTree = "<group>";

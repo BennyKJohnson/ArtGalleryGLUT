@@ -57,9 +57,9 @@ public:
     
     CGMaterialProperty(CGTexture* content) {
         
-        wrapS = CGWrapModeRepeat;
+        wrapS = CGWrapModeClamp;
         
-        wrapT =  CGWrapModeRepeat;
+        wrapT = CGWrapModeClamp;
         
         magnificationFilter = CGFilterModeNearest;
         
@@ -102,11 +102,11 @@ public:
     
     void loadWrap(GLenum coordinate, CGWrapMode wrapMode) {
         
-        GLenum openGLWrapMode = GL_CLAMP;
+        GLenum openGLWrapMode = GL_CLAMP_TO_EDGE;
         
         switch (wrapMode) {
             case CGWrapModeClamp:
-                openGLWrapMode = GL_CLAMP;
+                openGLWrapMode = GL_CLAMP_TO_EDGE;
                 break;
             case CGWrapModeMirror:
                 openGLWrapMode = GL_MIRRORED_REPEAT;

@@ -15,6 +15,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "SOIL.h"
+#ifdef __APPLE__
+#include <GLUT/GLUT.h> //GLUT Library, will make you life easier
+#include <OpenGL/OpenGL.h> //OpenGL Library
+#elif defined _WIN32 || defined _WIN64
+#include <glut.h>
+#endif
 
 class CGTexture {
     
@@ -27,13 +33,16 @@ public:
     
     unsigned char* pixelData;
     
+    GLuint textureID;
+    
+    
     void loadFile(const char  *filename) {
         
         int channels = 0;
         int width;
         int height;
         
-        
+        /*
         unsigned char *data = SOIL_load_image
         (
          filename,
@@ -47,15 +56,34 @@ public:
         size.height = (float)height;
         
        // pixelData = loadBMPFile(filename);
+         
+         */
+        
+        textureID = SOIL_load_OGL_texture
+        (
+         filename,
+         SOIL_LOAD_AUTO,
+         SOIL_CREATE_NEW_ID,
+         SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT
+         );
+        
+        /* check for an error during the load process */
+        if( 0 == textureID )
+        {
+            printf( "SOIL loading error: '%s'\n", SOIL_last_result() );
+        }
         
     }
     
     CGTexture(const char  *filename) {
+        textureID = 0;
+
         loadFile(filename);
         
     }
     
     CGTexture(std::string *filename) {
+        textureID = 0;
         loadFile(filename->c_str());
 
         

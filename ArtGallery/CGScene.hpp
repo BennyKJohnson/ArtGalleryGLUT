@@ -21,7 +21,6 @@
 
 class CGScene {
     
-    void renderNode(CGNode *node);
     
     int lightCount;
     
@@ -34,7 +33,8 @@ public:
 
     bool autoenablesDefaultLighting;
     
-    
+    void renderNode(CGNode *node);
+
     CGNode *rootNode;
     
     void render();

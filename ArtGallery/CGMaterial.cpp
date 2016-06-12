@@ -14,20 +14,26 @@
 #elif defined _WIN32 || defined _WIN64
 #    include <glut.h>
 #endif
-
+#include <iostream>
 
 void CGMaterial::loadTexture(CGTexture *texture) {
     // Check if existing buffer'
     
-    
+    GLuint textureID = texture->textureID;
     if(textureID > 0) {
         glBindTexture(GL_TEXTURE_2D, textureID);       // bind texture type to ID
-    } else {
+    } else if(true) {
+        // OLD TEXTURE LOADING CODE GLUBUILD2DMIPMAPS CAUSING ISSUES
+        
         glGenTextures(1, &textureID);                  // generate texture names
         glBindTexture(GL_TEXTURE_2D, textureID);       // bind texture type to ID
-        
+        std::cout << "Generated Texture Buffer with ID: " << textureID << std::endl;
+
         // generate texture mipmaps
         gluBuild2DMipmaps(GL_TEXTURE_2D, 3, texture->size.width, texture->size.height, GL_RGB, GL_UNSIGNED_BYTE, texture->pixelData);
+    } else {
+        std::cout << "Failed to load texture" << std::endl;
+        //exit(0);
     }
   
     
@@ -40,8 +46,13 @@ void CGMaterial::loadMaterialProperty(CGMaterialProperty *property, GLenum type)
     GLenum faceType = doubleSided ? GL_FRONT_AND_BACK : GL_FRONT;
 
     if (property->content != NULL && CGMaterial::texturesEnabled) {
+        
         loadTexture(property->content);
         property->loadContent();
+        CGColor diffuseColor = CGColorWhite();
+
+        float diffuseValues[] = {diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a};
+        glMaterialfv(faceType, type, diffuseValues);
     }
     
     if (!property->color.isEmpty()){
