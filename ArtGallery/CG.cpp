@@ -228,6 +228,17 @@ CGRect centerAtPoint(CGPoint center, CGRect rect) {
     
     return rect;
 }
+void renderBitmapString(int x, int y, const char string, void *font) {
+    // Set point to draw string
+    glRasterPos2i(x, y);
+    const char *c  = &string;
+    // Iterate through each character of string
+    while (*c != '\0') {
+        // Draw individual character
+        glutBitmapCharacter(font, *c);
+        c++;
+    }
+}
 
 void renderBitmapString(int x, int y, std::string *string, void *font) {
     // Set point to draw string

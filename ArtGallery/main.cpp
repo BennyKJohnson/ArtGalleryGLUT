@@ -86,6 +86,8 @@ bool antiAliasing = false;
 
 bool stencilBuffering  = true;
 
+bool motionBlur = false;
+
 void resetCamera();
 
 int accumulationSize = 8;
@@ -108,6 +110,8 @@ CGNode *cameraNode;
 
 CGNode *monkeyNode;
 
+std::vector<CGNode*> lightSources;
+
 
 float fps;
 
@@ -128,6 +132,12 @@ bool hasReceivedInitalMouseMovement = false;
 
 std::string *helpString;
 
+std::string dayModeStatus;
+
+std::string displayModeStatus;
+
+std::string modifyingStatus;
+
 bool showInstructions;
 
 CGVector3 cameraFront = CGVector3(0, 0 ,-1);
@@ -141,7 +151,7 @@ bool CGMaterial::texturesEnabled = true;
 
 void setWireFrameMode(CGColor backgroundColor, CGColor wireColor);
 
-
+bool nightMode = false;
 
 void setOGLProjection(int width, int height) {
     glViewport(0, 0, width, height);
@@ -163,20 +173,27 @@ void windowShouldRedraw() {
 }
 
 void setDisplayMode(CGDisplayMode displayMode) {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);    //fill mode
+    
     switch (displayMode) {
         case CGDisplayModeDefault:
+            displayModeStatus = "Shading with Lighting and Texture";
             glEnable(GL_LIGHTING);
             glEnable(GL_TEXTURE_2D);	// enable 2D texturing
             break;
         case CGDisplayModeColored:
+            displayModeStatus = "Shaded without Lighting and Texture";
             glDisable(GL_LIGHTING);
             glDisable(GL_TEXTURE_2D);
             break;
         case CGDisplayModeShadedOnly:
+            displayModeStatus = "Shaded without Textures";
             glEnable(GL_LIGHTING);
             glDisable(GL_TEXTURE_2D);
             break;
         case CGDisplayModeTexturedWithoutLighting:
+            displayModeStatus = "Shaded without lighting";
+
             glEnable(GL_TEXTURE_2D);
             glDisable(GL_LIGHTING);
             break;
@@ -185,18 +202,56 @@ void setDisplayMode(CGDisplayMode displayMode) {
     glutPostRedisplay();
 }
 
+void setNightMode(bool night) {
+    nightMode = night;
+    if(nightMode) {
+        for (int i = 0; i < lightSources.size(); i++) {
+            lightSources[i]->hidden = true;
+        }
+        
+        leftLightNode->hidden = false;
+
+
+        dayModeStatus = "Night";
+        
+    } else {
+        for (int i = 0; i < lightSources.size(); i++) {
+            lightSources[i]->hidden = false;
+        }
+        
+        dayModeStatus = "Day";
+
+    }
+    
+    
+}
+
+void toggleOpenGLSetting(GLenum property) {
+    if (glIsEnabled(property)) {
+        glDisable(property);
+    } else {
+        glEnable(property);
+    }
+}
+
+
 void didPressNumKey(int index) {
     switch (modifyMode) {
         case CGModifyModeWire:
             switch (index) {
                 case 1:
                     setWireFrameMode(CGColorBlack(), CGColorWhite());
+                    displayModeStatus = "Wire Black and White";
                     break;
                 case 2:
                     setWireFrameMode(CGColorWhite(), CGColorBlack());
+                    displayModeStatus = "Wire White and Black";
+
                     break;
                 case 3:
                     setWireFrameMode(CGColorBlue(), CGColorSimpleYellow());
+                    displayModeStatus = "Wire Blue and Yellow";
+
                 default:
                     return;
             }
@@ -212,29 +267,49 @@ void didPressNumKey(int index) {
             
             
         }
-          
+        case CGModifyModeLighting: {
+            int lightIndex = index - 1;
+            if(lightIndex >= 0 && lightIndex < lightSources.size()) {
+                CGNode *light = lightSources[lightIndex];
+                light->hidden = !light->hidden;
+            }
+            
+            
+        }
         default:
             break;
     }
 }
 
 void setModifyMode(CGModifyMode mode) {
+    if(mode == modifyMode) {
+        // Set to none
+        modifyMode = CGModifyModeNone;
+    } else {
+        modifyMode = mode;
+    }
     
-    switch (mode) {
+    
+    switch (modifyMode) {
         case CGModifyModeWire:
             std:: cout << "Setting WireMode" << std::endl;
-            
+            modifyingStatus = "Setting Wire mode use 1-3";
             break;
         case CGModifyModeShading:
             std:: cout << "Setting Shading Mode" << std::endl;
-
-        default:
+            modifyingStatus = "Setting Wire mode use 1-4";
             break;
+        case CGModifyModeLighting:
+             modifyingStatus = "Setting Lighting use 1-4";
+           break;
+        case CGModifyModeNone:
+            modifyingStatus = "";
+               break;
+  
     }
     
     
     
-    modifyMode = mode;
 }
 
 
@@ -302,13 +377,7 @@ void toggleTranslucentSurfaces() {
     }
 }
 
-void toggleOpenGLSetting(GLenum property) {
-    if (glIsEnabled(property)) {
-        glDisable(property);
-    } else {
-        glEnable(property);
-    }
-}
+
 
 void setPolygonMode(CGPolygonMode mode) {
     switch (mode) {
@@ -423,13 +492,15 @@ char* getLastScreenshot() {
     if (directory) {
         while ((dir = readdir(directory)) != NULL)
         {
-            if(filename == NULL) {
-                filename = new char[256];
+            if ( strstr( dir->d_name, ".bmp" )) {
+                if(filename == NULL) {
+                    filename = new char[256];
+                }
+                unsigned long length = strlen(dir->d_name);
+                strcpy(filename, dir->d_name);
+                filename[length] = '\0';
             }
-            unsigned long length = strlen(dir->d_name);
-            printf("%s\n", dir->d_name);
-            strcpy(filename, dir->d_name);
-            filename[length] = '\0';
+            
         }
         closedir(directory);
         
@@ -445,7 +516,7 @@ CGTexture* loadScreenshotTexture() {
     char screenshotURL[512] = "screenshots/";
     char *screenshotFilename = getLastScreenshot();
     if(screenshotFilename != NULL) {
-        strcat(screenshotURL, screenshotFilename);        
+        strcat(screenshotURL, screenshotFilename);
         CGTexture *texture = new CGTexture(screenshotURL);
         return texture;
     } else {
@@ -513,14 +584,10 @@ void keyboardHandler(unsigned char key, int x, int y)
             setWireFrameMode(CGColorBlue(), CGColorSimpleYellow());
             break;
         case 'z':
-            setModifyMode(CGModifyModeShading);
+            setDisplayMode(CGDisplayModeDefault);
             break;
         case 's':
-            setPolygonMode(CGPolygonModeSolid);
-          //  glDisable(GL_LIGHTING);
-           // glDisable(GL_)
-            glEnable(GL_LIGHTING);
-            glutPostRedisplay();
+            setModifyMode(CGModifyModeShading);
             break;
             /*
         case 'z':
@@ -540,8 +607,12 @@ void keyboardHandler(unsigned char key, int x, int y)
         case 'm':
             toggleOpenGLSetting(GL_COLOR_MATERIAL);
             break;
+        case 'n':
+            setNightMode(!nightMode);
+            glutPostRedisplay();
+            break;
         case 'l':
-            toggleAmbientLighting();
+            setModifyMode(CGModifyModeLighting);
             break;
         case 'r':
             resetCamera();
@@ -754,7 +825,11 @@ void renderHUD() {
     
     if (showInstructions) {
         setContextColor(CGColorWhite());
-        renderBitmapString(0, 30, helpString, GLUT_BITMAP_HELVETICA_12);
+        renderBitmapString(0, 70, helpString, GLUT_BITMAP_HELVETICA_12);
+
+        renderBitmapString(0, 55, &modifyingStatus, GLUT_BITMAP_HELVETICA_12);
+        renderBitmapString(0,40, &dayModeStatus, GLUT_BITMAP_HELVETICA_12);
+        renderBitmapString(0,25, &displayModeStatus, GLUT_BITMAP_HELVETICA_12);
         renderBitmapString(0, 10, &fpsString, GLUT_BITMAP_HELVETICA_12);
     }
     glMatrixMode(GL_MODELVIEW);
@@ -817,21 +892,34 @@ void render(void) {
     // Setup Scene background color
     CGColor backgroundColor = scene->backgroundColor;
     glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
-    glClearAccum(0.0, 0.0, 0.0, 0.0);
-
     int jitterSize = accumulationSize;
-    if(!antiAliasing) {
+    if((!antiAliasing) || motionBlur) {
+
         jitterSize = 1;
+    } else {
+
+        std::cout << "No Aliasing";
     }
     
+    if(!motionBlur) {
+        glClearAccum(0.0, 0.0, 0.0, 0.0);
 
-   glClear(GL_ACCUM_BUFFER_BIT);
+        glClear(GL_ACCUM_BUFFER_BIT);
+
+    }
+
 
     for (int jitter = 0; jitter < jitterSize; jitter++) {
         //  Clear screen and Z-buffer
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
   //      glClearStencil(0);
 
+        if (motionBlur) {
+            glAccum(GL_RETURN, 0.95f);
+            glClear(GL_ACCUM_BUFFER_BIT);
+
+        }
+        
         glMatrixMode(GL_MODELVIEW);     // To operate on model-view matrix
         
         glLoadIdentity();
@@ -854,9 +942,14 @@ void render(void) {
     
         scene->render();
         glPopMatrix();
-        glAccum(GL_ACCUM, 1.0/jitterSize);
+        if (!motionBlur) {
+            glAccum(GL_ACCUM, 1.0/jitterSize);
+        }
     }
-    glAccum(GL_RETURN, 1.0);
+    
+    if (!motionBlur) {
+        glAccum(GL_RETURN, 1.0);
+    }
 
  
    renderHUD();
@@ -878,6 +971,7 @@ void setupLights() {
     rightLightNode->light = light;
     rightLightNode->geometry = lightSphere;
     light->color = CGColorWhite();
+    lightSources.push_back(rightLightNode);
     
     CGLight *leftLight = new CGLight();
     leftLight->color = CGColorBlue();
@@ -886,14 +980,16 @@ void setupLights() {
     leftLightNode->position = CGVector3(-5, 5, 0);
     leftLightNode->light = leftLight;
     leftLightNode->geometry = lightSphere;
-    
+    lightSources.push_back(leftLightNode);
+
     CGLight *fanLight = new CGLight();
     fanLight->color = CGColorWhite();
     CGNode *fanLightNode = new CGNode();
     fanLightNode->position =  CGVector3(0.7,3.8, 0);
     fanLightNode->light = fanLight;
     //fanLightNode->geometry = lightSphere;
-    
+    lightSources.push_back(fanLightNode);
+
     
     // Spot Light
     spotLightNode = new CGNode();
@@ -901,6 +997,9 @@ void setupLights() {
     CGLight *spotlight = new CGLight();
     spotlight->type = CGLightTypeSpot;
     spotLightNode->light = spotlight;
+    lightSources.push_back(spotLightNode);
+
+    
 //    spotLightNode->geometry = new CGBox(1,1,1);
     
     
@@ -1026,6 +1125,8 @@ CGNode* createTable() {
     return tableNode;
 }
 
+
+
 CGGeometry* mokeyGeometry() {
     
     CGGeometry *geometry = new CGGeometry();
@@ -1090,10 +1191,10 @@ void setupObjects() {
     // Chair
     
     CGNode *rightChairNode = createChair();
-    rightChairNode->position = CGVector3(2,0,0);
+    rightChairNode->position = CGVector3(2,0,-4);
     
     CGNode *leftChairNode = createChair();
-    leftChairNode->position = CGVector3(-2,0,0);
+    leftChairNode->position = CGVector3(-2,0,-4);
     
     
     // Front wall
@@ -1201,12 +1302,18 @@ void setupObjects() {
     CGTexture *testTexture = new CGTexture("check.bmp");
     CGMaterial *testMaterial = new  CGMaterial();
     testMaterial->diffuse = new CGMaterialProperty(testTexture);
+    testMaterial->diffuse->wrapS = CGWrapModeRepeat;
+    testMaterial->diffuse->wrapT = CGWrapModeRepeat;
+
   //  testTexture->diff
     
     cube->setMaterial(testMaterial);
+    
     CGNode *cubeNode = new CGNode(cube);
-    cubeNode->position = CGVector3(0.7,2, zPosition);
-
+    cubeNode->position = CGVector3(2,1,-4);
+    cubeNode->scale = CGVector3(0.5,0.5,0.5);
+    
+    
     CGGeometry *banana = bananaGeometry();
     CGTexture *bananaTexture = new CGTexture("banana.jpg");
     banana->setMaterial(new CGMaterial(bananaTexture));
@@ -1299,7 +1406,8 @@ void setupObjects() {
     scene->rootNode->addChildNode(bananaNode);
     
     
-   // scene->rootNode->addChildNode(cubeNode);
+    scene->rootNode->addChildNode(cubeNode);
+    
 }
 
 void setupScene() {
@@ -1347,7 +1455,9 @@ void initOpenGL() {
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);  // Nice perspective corrections
 
     setupScene();
-
+    setNightMode(false);
+    setDisplayMode(CGDisplayModeDefault);
+    setModifyMode(CGModifyModeNone);
     
 }
 
@@ -1370,7 +1480,7 @@ int main(int argc, char * argv[]) {
     glutInitWindowPosition(100,100);
     
 
-
+    
     
     //Name the window and create it
     mainWindow = glutCreateWindow("Art Gallery");
@@ -1379,9 +1489,11 @@ int main(int argc, char * argv[]) {
     //  Enable Z-buffer depth test
     glEnable(GL_DEPTH_TEST);
     
-    helpString = new std::string("z - Shading, d - Depth Test, c - Cull, f - Cull front, h - Help, m - Color Tracking, l - Ambient Lighting, r - Reset Camera, 1-3 on/off lights");
+    helpString = new std::string("s - Shading, w - Wire Mode, l - lighting, n - night, h - Help, m - Color Tracking, c - screenshot, r - Reset Camera");
     showInstructions = true;
     initOpenGL();
+    
+    
     
     //Start the main loop running, nothing after this will execute for all eternity (right now)
     glutMainLoop();

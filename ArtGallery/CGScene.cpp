@@ -34,6 +34,11 @@ GLenum CGScene::currentLightID() {
 void CGScene::renderNode(CGNode *node) {
     
     if(node->hidden) {
+        CGLight *light = node->light;
+        if (light) {
+            GLenum lightID = currentLightID();
+            glDisable(lightID);
+        }
         return;
     }
     
@@ -75,6 +80,7 @@ void CGScene::renderNode(CGNode *node) {
         CGLight *light = node->light;
         
         GLenum lightID = currentLightID();
+        
         float lightW = 1.0;
         if (light->type == CGLightTypeDirectional) {
             lightW = 0.0;
