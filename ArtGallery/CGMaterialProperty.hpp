@@ -59,7 +59,7 @@ public:
         
         wrapS = CGWrapModeRepeat;
         
-        wrapT = CGWrapModeRepeat;
+        wrapT =  CGWrapModeRepeat;
         
         magnificationFilter = CGFilterModeNearest;
         

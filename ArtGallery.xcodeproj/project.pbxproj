@@ -49,6 +49,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		6F1B3CAB1D0C2EE30028B843 /* frame.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = frame.h; sourceTree = "<group>"; };
+		6F27EEBB1D0CF14F00E40992 /* jitter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jitter.h; sourceTree = "<group>"; };
 		6F60E3901D082F7D00852CBC /* check.bmp */ = {isa = PBXFileReference; lastKnownFileType = image.bmp; path = check.bmp; sourceTree = "<group>"; };
 		6F60E3921D08449200852CBC /* woodFloor.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = woodFloor.jpg; sourceTree = "<group>"; };
 		6F62659E1CF978A000E2C5D7 /* ArtGallery */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ArtGallery; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -95,7 +97,6 @@
 		6FBFB36B1D0591A00030B3C8 /* CGGeometryElement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CGGeometryElement.cpp; sourceTree = "<group>"; };
 		6FBFB36C1D0591A00030B3C8 /* CGGeometryElement.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CGGeometryElement.hpp; sourceTree = "<group>"; };
 		6FBFB36E1D0592410030B3C8 /* monkey.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = monkey.h; sourceTree = "<group>"; };
-		6FBFB36F1D059AE30030B3C8 /* frame.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = frame.h; sourceTree = "<group>"; };
 		6FBFB3701D059EA80030B3C8 /* fan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = fan.h; sourceTree = "<group>"; };
 		6FBFB3721D05A6CA0030B3C8 /* Laminate.bmp */ = {isa = PBXFileReference; lastKnownFileType = image.bmp; path = Laminate.bmp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -139,6 +140,7 @@
 				6FBFB3541D058F570030B3C8 /* SOIL */,
 				6F6265CB1CF978E200E2C5D7 /* CG */,
 				6F6265BE1CF978D100E2C5D7 /* main.cpp */,
+				6F27EEBB1D0CF14F00E40992 /* jitter.h */,
 			);
 			path = ArtGallery;
 			sourceTree = "<group>";
@@ -198,10 +200,10 @@
 		6FBFB3631D0591030030B3C8 /* Geometry */ = {
 			isa = PBXGroup;
 			children = (
+				6F1B3CAB1D0C2EE30028B843 /* frame.h */,
 				6FBFB3701D059EA80030B3C8 /* fan.h */,
 				6FBFB36E1D0592410030B3C8 /* monkey.h */,
 				6FBFB3641D0591100030B3C8 /* plane.h */,
-				6FBFB36F1D059AE30030B3C8 /* frame.h */,
 			);
 			name = Geometry;
 			sourceTree = "<group>";

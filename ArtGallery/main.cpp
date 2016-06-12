@@ -21,10 +21,13 @@
 #include "CGParametricGeometry.hpp"
 #include "CGPresetMaterials.hpp"
 #include <math.h>
+#include <sys/stat.h>
+#include <ctime>
 
 #include "monkey.h"
 #include "frame.h"
 #include "fan.h"
+#include "jitter.h"
 
 #define MY_PI 		(3.14159265359)    //declare PI value
 #define DEG2RAD(a) 	(MY_PI/180*(a))    //convert degrees into radians
@@ -75,7 +78,15 @@ GLfloat lightAttenuation = 0.0;
 
 bool yellowAmbientEnabled = false;
 
+bool translucentSurfaces = true;
+
+bool antiAliasing = true;
+
 void resetCamera();
+
+int accumulationSize = 8;
+
+// Global Nodes
 
 CGLight *light;
 
@@ -89,9 +100,14 @@ CGNode *fanNode;
 
 CGNode *cameraNode;
 
+CGNode *monkeyNode;
+
+
 float fps;
 
 GLfloat gAngle = 0.0f;  //cube rotation angle
+
+GLfloat monkeyAngle = 0.0f; // Monkey rotation angle
 
 int frame=0, elapsedTime ,timebase=0;
 
@@ -110,6 +126,8 @@ bool showInstructions;
 CGVector3 cameraFront = CGVector3(0, 0 ,-1);
 
 CGVector3 cameraUp = CGVector3(0,1,0);
+
+CGMaterialProperty *screenshotMaterialProperty;
 
 // Static variable init
 bool CGMaterial::texturesEnabled = true;
@@ -264,6 +282,19 @@ void toggleShadeModel() {
     glutPostRedisplay();
 }
 
+void toggleTranslucentSurfaces() {
+    if(translucentSurfaces) {
+        // Disable
+        glDisable(GL_BLEND);       // enable blending
+
+        translucentSurfaces = false;
+    }else  {
+        glEnable(GL_BLEND);       // enable blending
+
+        translucentSurfaces = true;
+    }
+}
+
 void toggleOpenGLSetting(GLenum property) {
     if (glIsEnabled(property)) {
         glDisable(property);
@@ -295,31 +326,18 @@ void updateCamera() {
         cameraYaw -= 360.0;
     } else if(cameraYaw < 0.0)
         cameraYaw += 360.0;
-    /*
-    pointOfView->position.x += sinf(DEG2RAD(cameraYaw)) * moveForward;
-    pointOfView->position.z += -cos(DEG2RAD(cameraYaw)) * moveForward;
-    
-    moveForward = 0;
-    
-    float lookAtX =  pointOfView->position.x + sin(DEG2RAD(cameraYaw));
-    float lookAtZ =  pointOfView->position.z - cos(DEG2RAD(cameraYaw));
-    
-    */
-    float lookAtX = 0;
-    float lookAtZ = 0;
-    
+  
     glLoadIdentity();
     
     // Enable perspective projection with fovy, aspect, zNear and zFar
     CGCamera *camera = pointOfView->camera;
     gluPerspective(camera->yFov, aspect, camera->zNear, camera->zFar);
-  //  CGVector3 look = CGVector3(lookAtX, 1.0, lookAtZ);
-    // pointOfView->position +
-    std::cout << "Camera Position: " << pointOfView->position << std::endl;
-    std::cout << "Camera Front: " << cameraFront << std::endl;
+
+   // std::cout << "Camera Position: " << pointOfView->position << std::endl;
+   //  std::cout << "Camera Front: " << cameraFront << std::endl;
 
     CGVector3 lookAt = cameraFront + pointOfView->position;
-    std::cout << "Looking At: " << lookAt.x << ", " << lookAt.y << ", " << lookAt.z << std::endl;
+   // std::cout << "Looking At: " << lookAt.x << ", " << lookAt.y << ", " << lookAt.z << std::endl;
     
     setCamera(pointOfView->position,  lookAt, cameraUp);
     
@@ -387,6 +405,38 @@ void toggleFlashlight() {
     
 }
 
+void takeScreenshot() {
+
+    int exists = mkdir("screenshots", S_IRWXU);
+    
+    time_t date = time(0);
+    char filename[256];
+    sprintf(filename, "screenshots/%ld.bmp", date);
+    
+    int save_result = SOIL_save_screenshot
+    (
+     filename,
+     SOIL_SAVE_TYPE_BMP,
+     0, 0, 800, 600
+     );
+    
+    if(save_result > 0) {
+        std::cout << "Successfully saved screenshot" << std::endl;
+    } else {
+        std::cout << "Failed to save screenshot" << std::endl;
+    }
+    
+    /*
+    // Load Texture
+    CGMaterialProperty *oldScrenshotMaterial = screenshotMaterialProperty;
+    screenshotMaterialProperty = new CGMaterialProperty(new CGTexture("screenshot.bmp"));
+
+
+    delete oldScrenshotMaterial;
+     */
+}
+
+
 void keyboardHandler(unsigned char key, int x, int y)
 {
     switch(key)
@@ -394,7 +444,11 @@ void keyboardHandler(unsigned char key, int x, int y)
             //if ESC pressed, quit program
         case 27: exit(1);     //quit
             break;
-            
+        case 'a':
+            antiAliasing = !antiAliasing;
+            glutPostRedisplay();
+            std::cout << "antiAliasing " << antiAliasing << std::endl;
+            break;
         case 'q':
             setWireFrameMode(CGColorBlack(), CGColorWhite());
             break;
@@ -424,7 +478,8 @@ void keyboardHandler(unsigned char key, int x, int y)
             toggleOpenGLSetting(GL_DEPTH_TEST);
             break;
         case 'c':
-            toggleOpenGLSetting(GL_CULL_FACE);
+            takeScreenshot();
+           // toggleOpenGLSetting(GL_CULL_FACE);
             break;
         case 'f':
             toggleCullFace();
@@ -448,6 +503,10 @@ void keyboardHandler(unsigned char key, int x, int y)
             break;
         case 'h':
             showInstructions = !showInstructions;
+            glutPostRedisplay();
+            break;
+        case 't':
+            toggleTranslucentSurfaces();
             glutPostRedisplay();
             break;
         case 'v':
@@ -479,6 +538,8 @@ void keyboardHandler(unsigned char key, int x, int y)
 
 std::string fpsString;
 
+
+
 //called when no event in queue
 void myIdleFunc()
 {
@@ -491,7 +552,7 @@ void myIdleFunc()
         timebase = elapsedTime;
         frame = 0;
         char buff[100];
-        sprintf(buff,"FPS:%4.2f",fps);
+        sprintf(buff,"FPS: %4.2f",fps);
         fpsString = buff;
         
        // std::cout << "FPS: " << fps << std::endl;
@@ -499,13 +560,18 @@ void myIdleFunc()
     
     
     gAngle += 3;    //increment rotation angle
-    
+    monkeyAngle += 0.5;
     if(gAngle >= 360) //wrap around if rotation angle greater than 360
     {
         gAngle -= 360;
     }
     
+    if(monkeyAngle >= 360) {
+        monkeyAngle -= 360;
+    }
+    monkeyNode->eulerAngles = CGVector3(0,monkeyAngle,0);
     fanNode->eulerAngles = CGVector3(0,gAngle,0);
+    
     
     glutPostRedisplay();  //refresh display
 }
@@ -620,30 +686,14 @@ CGRect getWindowRect() {
     return CGRectMake((float)x, (float)y, (float)width, (float)height);
 }
 
-void render(void) {
-
-    // Setup Scene background color
-    CGColor backgroundColor = scene->backgroundColor;
-    glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
-
-    //  Clear screen and Z-buffer
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-    glMatrixMode(GL_MODELVIEW);     // To operate on model-view matrix
-
-    glLoadIdentity();
-    CGVector3 lookAt = cameraFront + pointOfView->position;
-
-    setCamera(pointOfView->position,  lookAt, cameraUp);
-    
-    scene->render();
-
+void renderHUD() {
     glMatrixMode(GL_PROJECTION);
-
+    
     glPushMatrix();
-
+    
     glLoadIdentity();
     //glViewport(0, 0, 800, 600);
-
+    
     gluOrtho2D(0.0, 800, 0.0, 600);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -654,13 +704,54 @@ void render(void) {
         renderBitmapString(0, 30, helpString, GLUT_BITMAP_HELVETICA_12);
         renderBitmapString(0, 10, &fpsString, GLUT_BITMAP_HELVETICA_12);
     }
-
-    
-    
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
+}
+
+
+void render(void) {
+    
+    GLint viewport[4];
+    glGetIntegerv (GL_VIEWPORT, viewport);
+    
+    // Setup Scene background color
+    CGColor backgroundColor = scene->backgroundColor;
+    glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+    glClearAccum(0.0, 0.0, 0.0, 0.0);
+
+    int jitterSize = accumulationSize;
+    if(!antiAliasing) {
+        jitterSize = 1;
+    }
+    
+
+    glClear(GL_ACCUM_BUFFER_BIT);
+
+    for (int jitter = 0; jitter < jitterSize; jitter++) {
+        //  Clear screen and Z-buffer
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );
+        glMatrixMode(GL_MODELVIEW);     // To operate on model-view matrix
+        
+        glLoadIdentity();
+        CGVector3 lookAt = cameraFront + pointOfView->position;
+        setCamera(pointOfView->position,  lookAt, cameraUp);
+        
+        glPushMatrix();
+        if (antiAliasing) {
+            glTranslatef (j8[jitter].x*4.5/viewport[2],
+                          j8[jitter].y*4.5/viewport[3], 0.0);
+        }
+    
+        scene->render();
+        glPopMatrix();
+        glAccum(GL_ACCUM, 1.0/jitterSize);
+    }
+    glAccum(GL_RETURN, 1.0);
+
+ 
+   renderHUD();
     
     glutSwapBuffers();
 }
@@ -717,7 +808,7 @@ void setupCamera() {
     CGCamera *sceneCamera = new CGCamera();
     cameraNode = new CGNode();
     // x, y ,z modifiying in z- is back
-    cameraNode->position = CGVector3(0,0,3);
+    cameraNode->position = CGVector3(0,1,3);
     //cameraNode->position = CGVector3(0,10,15);
     cameraNode->camera = sceneCamera;
 
@@ -839,7 +930,12 @@ CGGeometry* frameGeometry() {
     
     CGGeometry *geometry = new CGGeometry();
     CGGeometrySource *vertexSource = new CGGeometrySource(frameVerts, CGGeometrySourceSemanticVertex, frameNumVerts, 3, sizeof(CGVector3));
+    CGGeometrySource *normalSource = new CGGeometrySource(frameNormals, CGGeometrySourceSemanticNormal, frameNumVerts, 3, sizeof(CGVector3));
+    CGGeometrySource *uvSource = new CGGeometrySource(frameTexCoords, CGGeometrySourceSemanticTexcoord, frameNumVerts,2 ,sizeof(CGPoint));
+    
     geometry->geometrySources.push_back(vertexSource);
+    geometry->geometrySources.push_back(normalSource);
+    geometry->geometrySources.push_back(uvSource);
     return geometry;
     
 
@@ -943,7 +1039,7 @@ void setupObjects() {
     // Monkey
     CGGeometry *monkeyGeometry = mokeyGeometry();
     monkeyGeometry->setMaterial(CGPresentMaterial::copperMaterial());
-    CGNode *monkeyNode = new CGNode(monkeyGeometry);
+    monkeyNode = new CGNode(monkeyGeometry);
     monkeyNode->position =  CGVector3(1, 1.0, zPosition);
     
     torusNode->position = CGVector3(-0.5, 1.2, zPosition);
@@ -989,7 +1085,16 @@ void setupObjects() {
 
     // Frame
     float verticalPosition = 2.5;
+    
+    CGTexture *screenshotTexture = new CGTexture("screenshot.bmp");
+    CGMaterial *frameMaterial = new CGMaterial();
+    
+    screenshotMaterialProperty = new CGMaterialProperty(screenshotTexture);
+    
+    frameMaterial->diffuse = screenshotMaterialProperty;
+
     CGGeometry *frameGeo = frameGeometry();
+    frameGeo->setMaterial(frameMaterial);
     
     CGNode *frameNode = new CGNode(frameGeo);
     frameNode->position =  CGVector3(6, verticalPosition, -2);
@@ -1090,6 +1195,7 @@ void initOpenGL() {
     glDepthFunc(GL_LEQUAL);    // Set the type of depth-test
     
     // Setup Blending
+    
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);   // which blending function to use
     glEnable(GL_BLEND);       // enable blending
     
@@ -1110,7 +1216,7 @@ int main(int argc, char * argv[]) {
     glutInit(&argc, argv);
 #endif
     
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE | GLUT_DOUBLE);      //requests properties for the window (sets up the rendering context)
+    glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE | GLUT_DOUBLE | GLUT_ACCUM);      //requests properties for the window (sets up the rendering context)
 
     //Specify the Display Mode, this one means there is a single buffer and uses RGB to specify colors
     // glutInitDisplayMode(GLUT_DEPTH| GLUT_DOUBLE |GLUT_RGB);
